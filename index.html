@@ -1,2496 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Addressing LA - An A to Z of Cities and Communities in Los Angeles County</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="description"
+        content="Comprehensive gazetteer of all neighborhoods, cities, and communities in Los Angeles County, California">
+    <meta name="author" content="Nate Schulman">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary-color: #64748b;
+            --accent-color: #0ea5e9;
+            --background: #ffffff;
+            --surface: #f8fafc;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--background);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Loading Screen */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-animation {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading p {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header */
+        .site-header {
+            text-align: center;
+            padding: 4rem 0 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 3rem;
+            border-radius: 0 0 2rem 2rem;
+        }
+
+        .site-header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .site-header h2 {
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+            font-weight: 400;
+            margin-bottom: 1rem;
+            opacity: 0.95;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        .subtitle a {
+            color: white;
+            text-decoration: underline;
+            transition: opacity 0.3s;
+        }
+
+        .subtitle a:hover {
+            opacity: 0.8;
+        }
+
+        /* Introduction */
+        .intro {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .intro h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .intro p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .intro-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 1.5rem;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .stat:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        /* Alphabet Navigation */
+        .alphabet-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alphabet-nav a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: white;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alphabet-nav a:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Search */
+        .search-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        #neighborhoodSearch {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1rem;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            background: white;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        #neighborhoodSearch:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .clear-btn:hover {
+            background: var(--text-primary);
+        }
+
+        /* Content */
+        .content {
+            margin-bottom: 4rem;
+        }
+
+        .alphabet-section {
+            margin-bottom: 4rem;
+        }
+
+        .alphabet-letter {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        /* Neighborhood Cards */
+        .neighborhood-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        .neighborhood-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .neighborhood-header {
+            padding: 1.5rem 2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            transition: background-color 0.2s;
+        }
+
+        .neighborhood-header:hover {
+            background-color: var(--surface);
+        }
+
+        .neighborhood-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .toggle-icon {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.3s ease;
+            color: var(--secondary-color);
+        }
+
+        .neighborhood-card.expanded .toggle-icon {
+            transform: rotate(180deg);
+            color: var(--primary-color);
+        }
+
+        .neighborhood-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        .neighborhood-card.expanded .neighborhood-content {
+            max-height: 2000px;
+            /* Arbitrary large height */
+            opacity: 1;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out 0.1s;
+        }
+
+        .neighborhood-details {
+            padding: 0 2rem 2rem 2rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 0;
+        }
+
+        /* Adjust description margin since it's now inside details */
+        .description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            margin-top: 1.5rem;
+        }
+
+        .description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+        }
+
+        .sub-areas {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .sub-areas>p {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .sub-areas ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sub-areas li {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sub-areas li:last-child {
+            border-bottom: none;
+        }
+
+        .sub-areas h3 {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .sub-areas p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+
+        .location {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .location a {
+            color: inherit;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .location a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .region {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin: 2rem 0;
+        }
+
+        /* Footer */
+        .site-footer {
+            background: var(--text-primary);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 4rem;
+            border-radius: 2rem 2rem 0 0;
+        }
+
+        .footer-content {
+            text-align: center;
+        }
+
+        .footer-content p {
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .footer-content a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-content a:hover {
+            color: white;
+        }
+
+        .footer-note {
+            margin-top: 1rem;
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            z-index: 1000;
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-4px);
+        }
+
+        .back-to-top.visible {
+            display: flex;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .site-header {
+                padding: 3rem 1rem 1.5rem;
+            }
+
+            .intro {
+                padding: 1.5rem;
+            }
+
+            .intro-stats {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .alphabet-nav {
+                padding: 1rem;
+            }
+
+            .alphabet-nav a {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+
+            .neighborhood-card {
+                padding: 1.5rem;
+            }
+
+            .alphabet-letter {
+                font-size: 3rem;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+
+            .loading,
+            .alphabet-nav,
+            .search-container,
+            .back-to-top {
+                display: none;
+            }
+
+            .neighborhood-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <main class="container">
-        <h1>Addressing LA</h1>
-        <h2><em>By Nate Schulman</em></h2>
-        <div class="intro">
-            <h2>An A to Z of Cities and Communities in Los Angeles County, California</h2>
-            <p>The goal of this website is to identify and alphabeticize all cities, communities, neighborhoods, and unincorporated areas within Los Angeles County, both past and present.</p>
-            <p>This comprehensive A to Z guide of Los Angeles County communities represents an ongoing effort to document the rich diversity of neighborhoods, cities, and unincorporated areas that make up one of the nation's most populous counties...</p>
-            <p>This guide includes both incorporated cities and unincorporated communities, recognizing that many areas have distinct identities even without formal city status. It also includes historic neighborhoods that may have changed names or boundaries over time, as well as cultural districts and special areas of interest.</p>
-            <p>Los Angeles County was established Feb. 18, 1850 and is one of California's original 27 counties. Originally the County occupied a comparatively small area along the coast between Santa Barbara and San Diego, but within a year its boundaries were enlarged from 4,340 square miles to 34,520 square miles...</p>
-            <p>Los Angeles County today remains one of the nation's largest counties with 4,084 square miles, an area some 800 square miles larger than the combined area of Delaware and Rhode Island! Los Angeles County even includes the islands of San Clemente and Santa Catalina (better known as Catalina Island).</p>
-            <p>Los Angeles County is bordered on the east by Orange and San Bernardino Counties, on the north by Kern County, on the west by Ventura County, and on the south by the Pacific Ocean.</p>
-            <p>Approximately 27 percent of California's residents live in Los Angeles County. At over 10 million people (10,047,926, as of Dec. 2021), LA County has the largest population of any county in the USA, and is exceeded by only eight states.</p>
-        </div>
-        <div class="alphabet-section">
-            <h2><em><strong>Addressing LA - A to Z</strong></em></h2>
-        </div>
-        <section id="a-section">
-            <div class="alphabet-letter">A</div>
-            <article>
-                <h2>Acton</h2>
-                <p>Unincorporated desert community in the Antelope Valley of northern Los Angeles County.</p>
-                <p><strong>Acton</strong> Includes:</p>
-                <ul>
-                    <li>
-                        <h3>The Shambala Preserve</h3>
-                        <p><a href="https://www.shambala.org" target="_blank" rel="noopener noreferrer">The Shambala Preserve</a> is a 40-acre animal sanctuary established in 1972... In 2006, after Michael Jackson decided to close the private zoo at Neverland Valley Ranch, his two Bengal tigers named Sabu and Thriller were permanently relocated to Shambala Preserve...</p>
-                        <p><span class="location">📍 <a href="https://www.google.com/maps/place/The+Roar+Foundation%2FShambala+Preserve/@34.440474,-118.2558999,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2f47d8b16aeef:0x8782f08d9bc5f781!8m2!3d34.440474!4d-118.253325!16s%2Fm%2F02x3_8l?entry=ttu&g_ep=EgoyMDI1MDkyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">6867 Soledad Canyon Rd, Acton, CA 93510</a></span></p>
-                    </li>
-                    <li>
-                        <h3>Rio Groceries</h3>
-                        <p>A genuine operating rural country store, just off paved 2 lane highway, Soledad Canyon Road, Rio Groceries is more than a market—it’s a cinematic relic wrapped in rural charm...</p>
-                        <p><span class="location">📍 <a href="https://filmsantaclarita.com/listings/rio-cafe-groceries-2/" target="_blank" rel="noopener noreferrer">9411 Soledad Canyon Road Acton, CA 91390</a></span></p>
-                    </li>
-                </ul>
-                <p class="region">Geographic Region: Antelope Valley - Unincorporated</p>
-            </article>
-            <div class="divider"></div>
-            <article>
-                <h2>Adams-Normandie</h2>
-                <p>Including:</p>
-                <ul>
-                    <li>Adams - Normandie Historic Preservation Overlay Zone<br>
-                        including the Bernays House, Historic-Cultural Monument #780<br>
-                        <span class="location">📍 1656 W. 25th Street, Los Angeles, CA 90007</span>
-                    </li>
-                    <li>First African Methodist Episcopal Zion Cathedral & Community Center<br>
-                        Historical Cultural Monument 341, cornerstone of the neighborhood's cultural history<br>
-                        <span class="location">📍 1449 W Adams Blvd, Los Angeles, CA 90007</span>
-                    </li>
-                    <li>Loren Miller Recreation Center<br>
-                        <span class="location">📍 2717 S Halldale Ave, Los Angeles, CA 90018</span>
-                    </li>
-                    <li>Sugar Hill Historic District - includes the Hattie McDaniel Residence<br>
-                        Sugar Hill resident Hattie McDaniel, who identified as a bisexual woman, was the first African American to win an Academy Award.
-                        <span class="location">📍 2203 S Harvard Blvd, Los Angeles, CA 90018</span>
-                    </li>
-                </ul>
-                <p class="region">Geographic Region: South LA</p>
-            </article></section>
-
-<div class="divider"></div>
-
-        <h2><strong>Agoura Hills</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Old Agoura (Historic Name)</li>
-            <li>Paramount Ranch<br>
-            Historic film set and parkland used since 1927 for dozens of Western movies and TV series, now part of the Santa Monica Mountains NRA.<br>
-            <span class="location">📍 2903 Cornell Road, Agoura Hills, CA, 91301</span></li>
-            <li>Reyes Adobe Museum<br>
-            Agoura Hills' first home represents 150 years of exciting California history. 19th-century rancho headquarters preserved as a local history museum in the city's center, on Old Ranch Rd.<br>
-            <span class="location">📍 30400 Rainbow Crest Dr, Agoura Hills, CA 91301</span></li>
-        </ul>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Agua Dulce</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Vasquez Rocks Natural Area Park<br>
-            Striking rock formations popular for hiking and filming, managed by Los Angeles County Parks. The park commemorates outlaw Tiburcio Vasquez who used the rocks as a hideout in 1874, and is listed on the National Register for its geological and cultural significance.<br>
-            <span class="location">📍 10700 Escondido Canyon Rd, Agua Dulce, CA 91390</span></li>
-            <li>Halfway House Café<br>
-            Historic roadside diner and film location from the 1920s, halfway between Los Angeles and Palmdale.<br>
-            <span class="location">📍 15564 Sierra Hwy, Santa Clarita, CA 91390</span></li>
-        </ul>
-        <p class="region">Santa Clarita Valley, Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Alhambra</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Emery Park</li>
-            <li>Stoneman</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Alpine</strong></h2>
-        <p>Unincorporated residential area in the Antelope Valley, north of Palmdale.</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Antelope Valley Poppy Reserve:<br>
-            State park off Lancaster Blvd known for wildflower blooms each spring; nearest major open space.<br>
-            <span class="location">📍 15101 Lancaster Rd, Lancaster, CA 93536</span></li>
-        </ul>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Altadena</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Central Altadena</li>
-            <li>Christmas Tree Lane:<br>
-            Annual holiday light tradition along Santa Rosa Ave, designated LA city historic district.</li>
-            <li>Eaton Canyon Falls:<br>
-            Scenic waterfall and nature center just northeast of Altadena; accessible by trail from Highland Ave.</li>
-            <li>Farnsworth</li>
-            <li>Historic Highlands Historic District</li>
-            <li>Janes Village</li>
-            <li>JPL (named for close proximity to Jet Propulsion Laboratory)</li>
-            <li>Hope Heights</li>
-            <li>The Meadows</li>
-            <li>Stonehill</li>
-        </ul>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Anaverde</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Anaverde Park<br>
-            <span class="location">📍 2820 Greenbrier St, Palmdale, CA 93551</span></li>
-        </ul>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Angeles Crest</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Angeles Crest Highway</li>
-            <li>Mount Wilson Observatory<br>
-            Celebrated observatory complex featuring powerful solar & nighttime telescopes. Established 1904 by Caltech under Theodore von Kármán and completed north-slope telescopes by 1917, the 100-inch Hooker Telescope was the world's largest and enabled Edwin Hubble's discovery of the expanding universe in 1923, cementing its role in modern astronomy.<br>
-            <span class="location">📍 100 Mt Wilson Circle Road, Mt Wilson, CA 91023</span></li>
-            <li>Sturtevant Camp</li>
-            <li>Switzer Falls Trail</li>
-        </ul>
-        <p class="region">Angeles National Forest</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Angeles Mesa</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Angeles Mesa Elementary School<br>
-            <span class="location">📍 2611 W 52nd St, Los Angeles, CA 90043</span></li>
-            <li>Angeles Mesa Branch Library<br>
-            The Angeles Mesa Branch Library, open since 1928 and built in the Spanish Colonial Revival style, is listed on the National Register of Historic Places<br>
-            <span class="location">📍 2700 W 52nd St, Los Angeles, CA 90043</span></li>
-            <li>Angeles Mesa Park<br>
-            <span class="location">📍 4726 8th Ave, Los Angeles, CA 90043</span><br>
-            https://www.laparks.org/park/angeles-mesa<br>
-            Angeles Mesa Park is a small urban playground which was formerly known as "48th Street and 8th Avenue Park"</span></li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Angelino Heights</strong></h2>
-        <p>One of LA's oldest suburbs—a City of Los Angeles Historic Preservation Overlay Zone since 1983. One of the earliest suburbs of Los Angeles, Angelino Heights is famous for its exceptionally intact Victorian streetscape, notably on <span class="location">📍 Carroll Avenue</span>, such as <span class="location">📍 1329 Carroll Ave, Los Angeles, CA 90026</span> - a living museum of Queen Anne and Eastlake-style architecture.</p>
-        
-        <p>Enacted as Los Angeles's first local Historic Preservation Overlay Zone, Angelino Heights safeguards one of LA's most intact Victorian-era suburbs, with landmark Carroll Avenue's 26 Queen Anne and Eastlake homes (NR listed 1982) providing a vivid streetscape of 1880s residential design.</p>
-        
-        <ul>
-            <li>Angelino Heights Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">Echo Park, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Angelus Vista</strong></h2>
-        <p>Neighborhood in Mid-City Los Angeles, between Pico and Washington, Western and Arlington (ZIP Code 90019).</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Angeles Vista Neighborhood Sign<br>
-            <span class="location">📍 Pico Blvd & Arlington Ave</span></li>
-            <li>Angelus Vista Historic District<br>
-            <span class="location">📍 Van Ness, Cimarron, Wilton, Venice & Washington Blvds</span><br>
-            89 contributing Craftsman and Period Revival properties on Van Ness, Cimarron, Wilton between Venice and Washington</li>
-            <li>Wilshire Ward Chapel (Historic Cultural Monument 531)<br>
-            1922 Spanish Colonial Revival LDS chapel at<br>
-            <span class="location">📍 1209 S Manhattan Pl, Los Angeles, CA 90019</span></li>
-            <li>Pio Pico Middle School<br>
-            <span class="location">📍 1512 S Arlington Ave, Los Angeles, CA 90019</span></li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Antelope Acres</strong></h2>
-        <p>Unincorporated rural community at NW Lancaster, in western Antelope Valley, ZIP 93536.</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Antelope Acres Grocery & Gas<br>
-            <span class="location">📍 48248 90th St W, Lancaster, CA 93536</span></li>
-        </ul>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Arcadia</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Los Angeles County Arboretum & Botanic Garden<br>
-            <span class="location">📍 301 N Baldwin Ave, Arcadia, CA 91007</span><br>
-            127-acre educational garden on historic Rancho Santa Anita grounds; Housed on the 1875 Rancho Santa Anita estate of Elias J. "Lucky" Baldwin and founded as a public garden in 1955; features Queen Anne Cottage and Lake Arroyo</li>
-            <li>Santa Anita Park Racetrack<br>
-            Opened in December 1934 under the leadership of Charles H. "Doc" Strub, this Art Deco racetrack pioneered the photo finish and $100,000 Santa Anita Handicap. Designed by Gordon B. Kaufmann, it became "The World's Richest Racetrack" and served as a WWII Japanese-American internment center in 1942, later hosting the 1984 Olympic equestrian events.<br>
-            <span class="location">📍 285 W Huntington Dr, Arcadia, CA 91007</span></li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Arleta</strong></h2>
-        <p>Neighborhood in North San Fernando Valley, city of Los Angeles, ZIP 91331.</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Arleta Ave corridor<br>
-            Ethnic shops and restaurants lining<br>
-            <span class="location">📍 Arleta Ave., Arleta, CA 91331</span></li>
-            <li>Arleta High School<br>
-            <span class="location">📍 14200 Van Nuys Blvd, Arleta, CA 91331</span></li>
-            <li>Juicy Couture's Former Headquarters<br>
-            Developed in the late 1990s, these unassuming industrial buildings housed the iconic fashion brand Juicy Couture's early operations, marking a chapter in LA's garment-district suburban decentralization and late-20th-century cultural export.<br>
-            <span class="location">📍 12723 Wentworth St, Arleta, CA 91331</span></li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Artesia</strong></h2>
-        <p>Incorporated city in southeast Los Angeles County (ZIP 90701)</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Little India<br>
-            Pioneer Boulevard "Little India": Cluster of 120+ Indian grocery stores, restaurants and boutiques from 183rd–188th St;<br>
-            <span class="location">📍 18630 Pioneer Blvd, Artesia, CA 90701</span></li>
-            <li>The East West Ice Palace<br>
-            co-owned by Olympic gold medalist Michelle Kwan, is a major draw for skaters throughout Southern California.<br>
-            <span class="location">📍 11446 Artesia Blvd, Artesia, CA 90701</span></li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Athens</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Athens on the Hill / Athens Park / Athens Village / Athens-Westmont / West Athens - Westmont - Unincorporated</li>
-            <li>Athens Park<br>
-            <span class="location">📍 12603 S Broadway, Los Angeles, CA 90061</span></li>
-            <li>Los Angeles Southwest College<br>
-            Established 1967 in the wake of the Watts riots, LASC provides affordable higher education to South LA communities, addressing decades-long concerns over academic access and urban-rural opportunity gaps<br>
-            <span class="location">📍 1600 W Imperial Hwy, Los Angeles, CA 90047</span></li>
-            <li>South Los Angeles Sheriff's Station<br>
-            <span class="location">📍 1310 W Imperial Hwy, Los Angeles, CA 90044</span></li>
-        </ul>
-        <p class="region">South L.A. - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Atwater Village</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Atwater Village Branch Library<br>
-            <span class="location">📍 3379 Glendale Blvd, Los Angeles, CA 90039</span></li>
-            <li>Glendale–Hyperion Bridge:<br>
-            a concrete arch bridge viaduct in Atwater Village, completed in 1927, that spans the L.A. River and Interstate 5, connecting Silver Lake to Atwater Village. It became LA Historic-Cultural Monument 164 in 1976 and inspired a replica in Disney California Adventure Park</li>
-        </ul>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Avalon</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Catalina Casino<br>
-            <span class="location">📍 1 Casino Way, Avalon, CA 90704</span><br>
-            The Catalina Casino (not a gambling casino, but a grand ballroom and theater) is arguably the island's most iconic building, a testament to Jazz Age ambition. Dedicated May 29, 1929, William Wrigley Jr.'s Art Deco–Mediterranean Casino was built by Walter Webber and Sumner Spaulding for $2 million as Avalon's social and civic hub. Its round 1,154-seat Avalon Theatre (first designed for sound in 1929) and 20,000 sq ft ballroom have hosted Big Band dances, steel-vessel film premieres, and the 1984 Olympic equestrian events. The Casino remains Avalon's most iconic landmark and a California Historical Landmark since 1971.</li>
-        </ul>
-        <p class="region">Catalina Island, Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Avocado Heights</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Avocado Heights Park<br>
-            <span class="location">📍 600 S 4th Ave, La Puente, CA 91746</span></li>
-        </ul>
-        <p class="region">San Gabriel Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Azusa</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Fish Canyon Falls<br>
-            A tiered 80-foot waterfall on a 5-mile round-trip trail through Fish Canyon in the San Gabriel Mountains, the falls have drawn hikers since newspaper-described visits in 1936 and the 1880s guest ranch era.</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="alphabet-letter">B</div>
-
-        <h2><strong>Baldwin Hills</strong></h2>
-        <p>Baldwin Hills derives its name from Elias J. "Lucky" Baldwin, who in the late 19th century purchased Rancho La Cienega o Paso de la Tijera and lent his name to the surrounding hills. The neighborhood was long known as the "Black Beverly Hills" for its concentration of affluent Black residents and landmarks like Kenneth Hahn Park and Village Green</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Baldwin Hills Estates</li>
-            <li>Baldwin Hills Village (now known as "Village Green")<br>
-            Built in 1941–42 as Baldwin Hills Village, a pioneering Garden City–style "superblock" of 627 apartments set amid shared green courts, designed by Reginald D. Johnson with consulting architect Clarence Stein. Designated Los Angeles Historic-Cultural Monument No. 174 in 1977, listed on the National Register of Historic Places in 1993, and declared a U.S. National Historic Landmark in 2001. Renamed Village Green after its 1972 conversion to condominiums; located at<br>
-            <span class="location">📍 5300 Rodeo Rd, LA, CA 90016</span></li>
-            <li>Baldwin Village (also known as "The Jungle," or "The Jungles")<br>
-            Developed in the 1940s–50s along former Rancho La Cienega land, originally by the same Clarence Stein team, to house young families in low-rise garden apartments. Nicknamed "The Jungle" for its lush tropical plantings—palms, banana trees, begonias that once surrounded the buildings. In 1990, the Los Angeles City Council officially adopted the name Baldwin Village to replace "The Jungle" and shed the area's menacing image, though the old nickname persists colloquially.</li>
-            <li>Baldwin Vista</li>
-            <li>Kenneth Hahn State Recreation Area<br>
-            At 401 acres, managed by the California Department of Parks and Recreation, it's one of Greater Los Angeles's largest urban parks, often called "LA's Central Park."</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Baldwin Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Original In-N-Out Burger Museum<br>
-            <span class="location">📍 13766 Francisquito Ave, Baldwin Park, CA 91706</span><br>
-            Replica of the first In-N-Out store. In honor of the chain's 1948 founding in a tiny 100 ft² drive-thru in Baldwin Park, a faithful replica of the original stand opened in March 2014 near its former location, which was demolished to make way for Interstate 10. Celebrates Harry and Esther Snyder's invention of California's first drive-thru hamburger stand and the two-way speaker box that accelerated car-side service. Operates as both shrine and mini-museum, staffed by In-N-Out ambassadors who share company lore and display period props and décor</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <!-- The pattern continues for all remaining entries... -->
-        <!-- I've demonstrated the structure and formatting approach for the first section -->
-        <!-- The complete file would continue with all entries from B through Z following the same pattern -->
-
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="loading-animation"></div>
+        <p>Loading Addressing LA...</p>
     </div>
-</body>
-</html>
-        <div class="alphabet-letter">C</div>
 
-        <h2><strong>Cadillac-Corning</strong></h2>
-        <h3><em>(also known as La Cienega Heights)</em></h3>
-        <p>The neighborhood originally called Cadillac–Corning adopted the name La Cienega Heights in 2003. Bounded by Cadillac Avenue, La Cienega Boulevard, Sawyer Street, and Robertson Boulevard, it encompasses roughly 10–18 square blocks of predominately single-family homes. Its demographic shifted from an early substantial Jewish population to primarily African American and Latino residents.</p>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Calabasas</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Bellagio</li>
-            <li>Calabasas Country Estates</li>
-            <li>Calabasas Highlands</li>
-            <li>Calabasas Hills</li>
-            <li>Calabasas Park Estates</li>
-            <li>Hidden Hills</li>
-            <li>Mountain View Estates</li>
-            <li>The Oaks of Calabasas</li>
-            <li>The Ridge</li>
-            <li>Vista Pointe</li>
-            <li>Westridge</li>
-        </ul>
-        <p>Calabasas occupies 14 miles along the southwest corner of the San Fernando Valley and the Santa Monica Mountains. Originally part of Rancho San Vicente and Rancho El Escorpión, the area hosted Chumash villages, Spanish expeditions in 1769–1776, and Miguel Leonis's "King of Calabasas" era in the 1870s. Incorporated in 1991 after decades as a rural enclave, Calabasas now balances historic preservation with gated residential estates and open-space protections.</p>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Cameo Plaza</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Canoga Park</strong></h2>
-        <p><em>(formerly Owensmouth)</em><br>
-        Founded as Owensmouth on March 30, 1912, the townsite was platted at the western edge of Isaac Van Nuys's wheat ranch in anticipation of water from the Owens River Aqueduct. Annexed to Los Angeles in 1917 to secure a municipal water supply, it was renamed Canoga Park on March 1, 1931. Today it remains a largely residential San Fernando Valley neighborhood, its early Red Car and Sherman Way transit history commemorated by local preservation groups.</p>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Canterbury Knolls</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Carson</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Stevenson Park</li>
-            <li>Victoria Park</li>
-            <li>West Carson (Unincorporated)</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Carthay</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Carthay Circle Historic Preservation Overlay Zone</li>
-            <li>Carthay Square Historic Preservation Overlay Zone</li>
-            <li>South Carthay Historic Preservation Overlay Zone</li>
-        </ul>
-        <p>Carthay is a half-square mile neighborhood in Central Los Angeles comprising three Historic Preservation Overlay Zones: Carthay Circle, Carthay Square, and South Carthay. It is bounded by Wilshire Boulevard to the north, Olympic Boulevard to the south, Fairfax Avenue to the east, and Schumacher Drive to the west.</p>
-        <p>Carthay Circle's centerpiece was the Carthay Circle Theatre, which opened in 1926 with a perfect-circle auditorium and multicolor tiled dome. Legendary film premieres such as Disney's Snow White and the Seven Dwarfs and Gone with the Wind debuted here before the theater's 1969 demolition. Today, Carthay Circle Park at McCarthy Vista and Crescent Heights Boulevard retains the neighborhood's historic character.</p>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Castaic</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Castaic Junction</li>
-            <li>Hasley Canyon</li>
-        </ul>
-        <p class="region">Santa Clarita Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Central-Alameda</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Augustus F. Hawkins Nature Park<br>
-            Augustus F. Hawkins Nature Park is an 8.5-acre urban wetland and nature center located at 5790 Compton Avenue. Opened in 2000 on a former brownfield municipal storage yard, the park features native plantings—including oaks, sycamores, and willows.</li>
-            <li>Nevin (Historic)<br>
-            Nevin is a historic neighborhood within Central-Alameda bounded roughly by Washington Boulevard, Alameda Street, Vernon Avenue, and Hooper Avenue. Laid out around Nevin Street and its namesake elementary school (opened 1916), the area was likely named after Santa Fe Railway manager William G. Nevin.</li>
-            <li>Pueblo Del Rio public housing project, also known locally as "Low Bottoms" or the "Pueblos"<br>
-            5th and Alameda. Constructed in 1941 under the National Housing Administration, it was designed by Paul R. Williams and Richard Neutra to house low-income factory laborers and returning veterans. The project's two-story brick-stucco buildings cluster around open green lawns. Over its history, the complex has been home to multi-generational African American families and, since the 1990s, large numbers of Latino residents. It has also faced challenges with gang activity and crime, earning local nicknames "Low Bottoms" and "the Pueblos."</li>
-            <li>Slauson Recreation Center</li>
-        </ul>
-        <p>Central-Alameda is a South Los Angeles neighborhood centered along Central Avenue and Alameda Street, just south of Downtown Los Angeles. Historically an industrial and working-class enclave, it encompasses residential blocks, commercial corridors, and civic amenities. The area reflects waves of demographic change—early railroad and factory workers, mid-century African American families, and today a predominantly Latino community.</p>
-        <p class="region">Southeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Century City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Fox Studio Lot</li>
-        </ul>
-        <p>Century City is a 176-acre neighborhood and business district on Los Angeles's Westside, located about ten miles west of Downtown. Developed on the former backlot of 20th Century Fox—land once owned by silent-era cowboy star Tom Mix—the district's first office building, Gateway West, opened in 1963. Today its cluster of skyscrapers, mixed-use developments, and retail centers make it one of Southern California's most prominent employment hubs.</p>
-        <p>The Fox Studio Lot occupies roughly 50 acres at the southwest edge of Century City, bounded by Santa Monica Boulevard, Avenue of the Stars, Pico Boulevard, and Olympic Boulevard.</p>
-        <ul>
-            <li>Opened in 1928 as Fox Movietone City, it was among Hollywood's first purpose-built sound film facilities, featuring Spanish Colonial Revival offices alongside architecturally eclectic soundstages.</li>
-            <li>In 1961, Fox sold 176 acres of backlot land to Alcoa—retaining and leasing back about 75 acres—to finance the creation of Century City.</li>
-            <li>Today the lot retains 15 soundstages, from Egyptian-themed halls to the famed scoring stage where The Sound of Music was recorded, plus backlot streets, commissary eateries, and state-of-the-art post-production suites.</li>
-            <li>It continues to operate as a fully-functioning studio facility, offering production and post-production services while preserving nearly a century of film and television heritage</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Century Palms/Cove</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Cerritos</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Charter Oak</strong></h2>
-        <p class="region">San Gabriel Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Chatsworth</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Chesterfield Square</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Cheviot Hills</strong></h2>
-        <p>Cheviot Hills is a highly desirable, residential area known for its quiet, tree-lined streets, proximity to golf courses, and classic architecture. It's nestled between the Fox and Sony Pictures studio lots, making it a popular filming location and a favorite among entertainment industry professionals. The neighborhood features a mix of Spanish Revival, Tudor, midcentury ranch, and Colonial-style homes, often with spacious backyards and scenic views.</p>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Chinatown (唐人街 洛杉矶)</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>former Little Italy (Historic)</li>
-            <li>Naud Junction (Historic Name)</li>
-            <li>former Sonoratown (Historic)</li>
-            <li>William Mead Homes public housing project also known as "Dogtown"</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>City of Industry</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Puente Junction</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Claremont</strong></h2>
-        <p class="region">Pomona Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Commerce</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Compton</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>"Bompton" - includes Centennial High School, Enterprise Park, Gonzales Park, and Piru Street.</li>
-            <li>East Rancho Dominguez (formerly known as East Compton)</li>
-            <li>Rosewood</li>
-            <li>West Rancho Dominguez (formerly known as West Compton and sometimes known as East Gardena)</li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Covina</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Citrus (Covina islands) - Unincorporated</li>
-            <li>East Covina</li>
-            <li>West Covina</li>
-            <li>Vincent</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Crenshaw</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Crenshaw Manor</li>
-            <li>Crenshaw Seinan Historic District</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Crestview</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Crystalaire</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Cudahy</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Culver City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Blair Hills</li>
-            <li>Blanco/Culver Crest</li>
-            <li>Carlson Park</li>
-            <li>Clarkdale</li>
-            <li>Culver City Arts District</li>
-            <li>Culver/West</li>
-            <li>Downtown Culver City</li>
-            <li>Fox Hills</li>
-            <li>Jefferson</li>
-            <li>Lucerne/Higuera</li>
-            <li>McLaughlin</li>
-            <li>McManus</li>
-            <li>Park East</li>
-            <li>Park West</li>
-            <li>Studio Village</li>
-            <li>Sunkist Park</li>
-            <li>Syd Kronenthal Park</li>
-            <li>Washington Culver</li>
-            <li>West Fox Hills</li>
-            <li>Lawrence & Martha Joseph Residence ("The Hobbit House")<br>
-            The Lawrence and Martha Joseph Residence and Apartments, often called the Hobbit Houses, are a landmarked example of the Storybook style of architecture in Los Angeles, California. The informal name "Hobbit House" is due to their supposed resemblance to the architecture of Tolkien's Shire.<br>
-            <span class="location">📍 3819 Dunn Dr, Culver City, CA 90232</span></li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Cypress Park</strong></h2>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="alphabet-letter">D</div>
-
-        <h2><strong>Deer Lake Highlands</strong></h2>
-        <p class="region">San Fernando Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Del Aire</strong></h2>
-        <p class="region">South Bay - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Del Rey</strong></h2>
-        <p class="region">Westside - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Del Sur</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Desert View Highlands</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Diamond Bar</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>South Diamond Bar</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-                <h2><strong>Dorset Village</strong></h2>
-        <p class="region">South LA</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Downey</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Downtown LA</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Arts District</li>
-            <li>Broadway Theater District</li>
-            <li>Bronzeville (Historic African-American Area in current-day Little Tokyo during the WWII Japanese Internment)</li>
-            <li>Bunker Hill</li>
-            <li>Chinatown (not technically Downtown, but just north of Civic Center)</li>
-            <li>City West (contested with Westlake)</li>
-            <li>Civic Center / Civic Support</li>
-            <li>El Pueblo de Los Angeles</li>
-            <li>Electronics District</li>
-            <li>Industrial District</li>
-            <li>Fashion District</li>
-            <li>Financial Core / Financial District</li>
-            <li>Furniture & Decorative Arts District</li>
-            <li>Gallery Row</li>
-            <li>Historic Core</li>
-            <li>Industrial District (officially named the L.A. Downtown Industrial District, a formal BID covering rail-adjacent zones)</li>
-            <li>Jewelry District</li>
-            <li>Little Tokyo ("J-Town")</li>
-            <li>Los Angeles Plaza Historic District</li>
-            <li>Old Bank District</li>
-            <li>"Skid Row" (officially Central City East)</li>
-            <li>South Park</li>
-            <li>Toy District</li>
-            <li>Wholesale District</li>
-        </ul>
-
-        <h3>Downtown LA Business Improvement District Sub-Areas</h3>
-        <p><em>(Commercial zones managed by BIDs, not standalone neighborhoods)</em></p>
-        <ul>
-            <li>Electronics District (part of the Downtown Industrial BID)</li>
-            <li>Furniture & Decorative Arts District (subset of the wholesale corridor)</li>
-            <li>Produce District (Santee Alley wholesale produce)</li>
-            <li>Piñata District (Taking up two blocks at the intersection of E Olympic Blvd & S Central Ave Los Angeles, CA 90021)</li>
-            <li>Seafood District (seafood wholesalers near the Produce District)</li>
-            <li>Washington Boulevard Corridor (bid zone overlapping Westlake/City West)</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Duarte</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="alphabet-letter">E</div>
-
-        <h2><strong>Eagle Rock</strong></h2>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>East Los Angeles (locally known as "East Los")</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Belvedere, aka Belvedere Gardens</li>
-            <li>City Terrace</li>
-            <li>Maravilla</li>
-            <li>Wellington Heights (Historic)</li>
-        </ul>
-        <p class="region">Eastside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Echo Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Elysian Heights</li>
-            <li>Victor Heights: also known as Figueroa Terrace or The Forgotten Edge, disputed with Chinatown; e.g.- the Eastside Italian Deli <span class="location">📍 1013 Alpine St, Los Angeles, CA 90012</span> is in Victor Heights</li>
-            <li>Temple-Beaudry (Historic)</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>El Camino Village (also known as Alondra Park)</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>El Monte</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>North El Monte</li>
-            <li>South El Monte</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>El Segundo</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>El Sereno</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Aurant (Historic)</li>
-            <li>Berkshire Historic Preservation Overlay Zone (HPOZ)</li>
-            <li>Hillside Village</li>
-            <li>Omaha Heights</li>
-            <li>Rose Hills Courts</li>
-            <li>Sierra Vista (Historic)</li>
-            <li>University Hills/Cal State LA</li>
-        </ul>
-        <p class="region">Eastside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Elizabeth Lake</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Andrade Corner</li>
-        </ul>
-        <p class="region">Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Elysian Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Chavez Ravine (Historic)</li>
-            <li>Dodger Stadium</li>
-            <li>Solano Canyon</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Elysian Valley (locally known as Frogtown)</strong></h2>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Encino</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Exposition Park</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="alphabet-letter">F</div>
-
-        <h2><strong>Fairfax</strong></h2>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Fairmont</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Figueroa Park Square</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Florence-Firestone</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Firestone Park</li>
-            <li>Florence / Graham / Florence-Graham</li>
-        </ul>
-        <p class="region">South L.A.</p>
-        <div class="alphabet-letter">G</div>
-
-        <h2><strong>Gardena</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Chacksfield Tract Residential Historic District</li>
-            <li>Hermosillo</li>
-            <li>Holly Park</li>
-            <li>Strawberry Park</li>
-        </ul>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Glassell Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Verdugo Village</li>
-        </ul>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Glendale</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Adams Hill</li>
-            <li>Adams Square</li>
-            <li>Citrus Grove</li>
-            <li>Emerald Isle</li>
-            <li>Grand Central</li>
-            <li>Grandview</li>
-            <li>Kenneth Village</li>
-            <li>Mariposa</li>
-            <li>El Miradero</li>
-            <li>Riverside Rancho</li>
-            <li>Rossmoyne</li>
-            <li>Somerset</li>
-            <li>Woodbury</li>
-        </ul>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Glendora</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Gorman</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Gorman Pass (also known as Tejon Pass or "The Grapevine")</li>
-        </ul>
-        <p class="region">Santa Clarita Valley, Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Gramercy Park (also known as West Park Terrace)</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Gramercy Place</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Granada Hills</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Balboa Highlands Historic Preservation Overlay Zone</li>
-            <li>O'Melveny Park<br>
-            This park is the second largest in Los Angeles, and offers picnicking & trails for hikers & bikers.</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Green Meadows</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Avalon Gardens public housing project</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Green Valley</strong></h2>
-        <p class="region">Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Griffith Park</strong></h2>
-        <p class="region">Central L.A.</p>
-
-        <div class="alphabet-letter">H</div>
-
-        <h2><strong>Hacienda Heights</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hacienda Village</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hancock Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Hancock Park Historic Preservation Overlay Zone</li>
-            <li>Longwood Highlands</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hansen Dam</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Happy Valley</strong></h2>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Harbor City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Harbor Pines</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Harbor Gateway</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Harbor Gateway North</li>
-            <li>Harbor Gateway South</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Harvard Heights</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Harvard Heights Historic Preservation Overlay Zone</li>
-            <li>North Harvard Heights</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Harvard Park</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hawaiian Gardens</strong></h2>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hawthorne</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Hawthorne Island - Unincorporated</li>
-            <li>HollyGlen</li>
-            <li>Wiseburn</li>
-        </ul>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hermosa Beach</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hi Vista</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hidden Hills</strong></h2>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Highland Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Arroyo View Estates</li>
-            <li>Garvanza Historic Preservation Overlay Zone</li>
-            <li>Hermon</li>
-            <li>Mount Angelus</li>
-            <li>Pisgah Home Historic District</li>
-            <li>Sycamore Grove</li>
-        </ul>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Historic Filipinotown</strong></h2>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Historic South-Central</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Historic Central Avenue Jazz Corridor</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hollywood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>East Hollywood (see section below)</li>
-            <li>Franklin Village</li>
-            <li>Hollywood & Highland</li>
-            <li>Hollywood Dell</li>
-            <li>Hollywood Heights</li>
-            <li>Hollywood Grove Historic Preservation Overlay Zone</li>
-            <li>Hollywood Media District</li>
-            <li>Hollywood Studio District</li>
-            <li>Hollywood Theatre Row Live Theatre District</li>
-            <li>Hollywoodland</li>
-            <li>Lake Hollywood</li>
-            <li>Spaulding Square Historic Preservation Overlay Zone</li>
-            <li>Sunset Square Historic Preservation Overlay Zone</li>
-            <li>Yucca Corridor</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hollywood: East Hollywood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>J-Flats (Historic Japanese immigrant community; also known as Dayton Heights or Madison; no official boundary on LA maps specifically, for instance - Westmoreland Avenue in "J-Flats," a Japanese American enclave between East Hollywood and Silver Lake)</li>
-            <li>Hel-Mel: (Heliotrope at Melrose): popular nickname for the Heliotrope Dr & Melrose Ave node; not a defined neighborhood in city planning</li>
-            <li>Little Armenia (Փոքր Հայաստան)</li>
-            <li>Melrose Hill</li>
-            <li>Thai Town (ไทยทาวน์)</li>
-            <li>Virgil Village</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hollywood Hills</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Beachwood Canyon</li>
-            <li>Benedict Canyon</li>
-            <li>Beverlyridge Estates</li>
-            <li>Coldwater Canyon</li>
-            <li>Franklin Canyon Park</li>
-            <li>Hollywood Hills East</li>
-            <li>Hollywoodland (Upper Beachwood Canyon)</li>
-            <li>Lake Hollywood</li>
-            <li>Lake Hollywood Estates</li>
-            <li>Laurel Canyon</li>
-            <li>Lookout Mountain</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hollywood Hills West</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>The Bird Streets</li>
-            <li>Briar Summit / Woodrow Wilson:
-Briar Summit:
-
-A small, exclusive enclave with streets like Briar Summit Drive
-
-Located in Hollywood Hills West Hikes: Briar Summit Open Space Preserve
-
-Features the Briar Summit Open Space Preserve (a hiking area)
-
-High-end properties, mostly built in the late 1950s
-
-            </li>
-            <li>Cahuenga Pass / Universal</li>
-            <li>Lake Hollywood</li>
-            <li>Mount Olympus (has Greek-themed street names: Apollo Drive • Achilles Drive • Electra Drive • Hercules Drive • Jupiter Drive • Oceanus Drive • Venus Drive • Vulcan Drive • Zeus Drive)</li>
-            <li>Nichols Canyon</li>
-            <li>Outpost Estates</li>
-            <li>Runyon Canyon</li>
-            <li>Wattles Garden Park</li>
-            <li>Whitley Heights Historic District / Historic Preservation Overlay Zone</li>
-            <li>Yucca Corridor</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Holmby Hills</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Huntington Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Pacific Boulevard Commercial Corridor</li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Hyde Park</strong></h2>
-        <p class="region">South L.A.</p>
-        <div class="alphabet-letter">I</div>
-
-        <h2><strong>Inglewood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Fairview Heights</li>
-            <li>Hollywood Park - Entertainment hub with SoFi Stadium</li>
-            <li>Inglewood Knolls - Quiet streets with midcentury homes and large yards</li>
-            <li>Morningside Park</li>
-            <li>North Inglewood - Bungalows and ranch-style homes from the 1930s–1950s, near Edward Vincent Jr. Park</li>
-            <li>South Inglewood - Historic homes from the 1920s and postwar era, plus shopping along Century Boulevard.</li>
-        </ul>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Irwindale</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="alphabet-letter">J</div>
-
-        <h2><strong>Jefferson Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Jefferson Park Historic Preservation Overlay Zone</li>
-            <li>West Adams Terrace Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Juniper Hills</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="alphabet-letter">K</div>
-
-        <h2><strong>Kagel Canyon</strong></h2>
-        <p class="region">Angeles National Forest - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>King Estates</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Kinneola Mesa</strong></h2>
-        <p class="region">San Gabriel Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Koreatown (also known as K-Town)</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Little Bangladesh</li>
-            <li>St. Andrews Square</li>
-            <li>Western-Wilton</li>
-            <li>Wilshire Center</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="alphabet-letter">L</div>
-
-        <h2><strong>LAX</strong></h2>
-        <p class="region">Westchester, South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Cañada Flintridge</strong></h2>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Crescenta-Montrose</strong></h2>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Ladera Heights</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Habra</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Habra Heights</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lake Balboa</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lake Hughes</strong></h2>
-        <p class="region">Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lake Los Angeles</strong></h2>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lake View Terrace</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lakewood</strong></h2>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Mirada</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>East La Mirada</li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lancaster</strong></h2>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Puente</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Bassett</li>
-            <li>South San Jose Hills</li>
-            <li>West Puente Valley</li>
-            <li>Valinda</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>La Verne</strong></h2>
-        <p class="region">Pomona Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lawndale</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Leimert Park</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lennox</strong></h2>
-        <p class="region">South Bay - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Leona Valley</strong></h2>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lincoln Heights</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Brewery Artist Lofts</li>
-            <li>Lincoln Heights Historic Preservation Overlay Zone</li>
-            <li>Lincoln Heights Industrial Zone</li>
-        </ul>
-        <p class="region">Eastside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Armenia (Փոքր Հայաստան)</strong></h2>
-        <p class="region">East Hollywood, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Bangladesh</strong></h2>
-        <p class="region">Koreatown, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Belize</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Ethiopia</strong></h2>
-        <p class="region">Mid-Wilshire, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little India</strong></h2>
-        <p class="region">Artesia, Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Russia</strong></h2>
-        <p class="region">West Hollywood, Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Little Tokyo (also known as J-Town 小東京)</strong></h2>
-        <p class="region">Downtown, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Littlerock</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Littlerock/Juniper Hills</li>
-            <li>Littlerock/Pearblossom</li>
-        </ul>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Llano</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lomita</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Long Beach (locally known as "LBC")</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Alamitos Beach</li>
-            <li>Alamitos Heights</li>
-            <li>Arlington</li>
-            <li>Belmont Heights (Historic District)</li>
-            <li>Belmont Shore</li>
-            <li>Bixby Knolls</li>
-            <li>Bluff Heights (Historic District)</li>
-            <li>Bluff Park (Historic District)</li>
-            <li>Brenner Place (Historic District)</li>
-            <li>California Heights (Historic District)</li>
-            <li>Cambodia Town</li>
-            <li>Carroll Park (Historic District)</li>
-            <li>Craftsman Village (Historic District)</li>
-            <li>Deforest Park</li>
-            <li>Downtown</li>
-            <li>Drake Park / Wilmore City (Historic District)</li>
-            <li>East Village</li>
-            <li>Eastside</li>
-            <li>El Dorado Park</li>
-            <li>Eliot Lane (Historic District)</li>
-            <li>Freeway Circle</li>
-            <li>Grant Neighborhood (Historic District)</li>
-            <li>Hamilton</li>
-            <li>Hellman Street Craftsman (Historic District)</li>
-            <li>Linden Avenue (Historic District)</li>
-            <li>Los Altos</li>
-            <li>Los Cerritos Wetlands</li>
-            <li>Lowena Drive (Historic District)</li>
-            <li>MacArthur Park</li>
-            <li>Minerva Place (Historic District)</li>
-            <li>Naples</li>
-            <li>Ramona Park</li>
-            <li>Rancho Estates</li>
-            <li>Rose Park (Historic District)</li>
-            <li>Rose Park South (Historic District)</li>
-            <li>Seadip</li>
-            <li>South of Conant</li>
-            <li>Sunrise Boulevard (Historic District)</li>
-            <li>Westside / Upper Westside</li>
-            <li>Willmore</li>
-            <li>Wilton Street (Historic District)</li>
-            <li>Wrigley (Historic District)</li>
-            <li>Zaferia</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Los Feliz</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Barnsdall Art Park, the site of the Hollyhock House, Los Angeles's first UNESCO World Heritage Site.</li>
-        </ul>
-        <p>According to the Los Feliz Neighborhood Council, these are the core subdivisions of Los Feliz:</p>
-        <ul>
-            <li>Franklin Hills</li>
-            <li>Los Feliz Hills</li>
-            <li>Los Feliz Knolls</li>
-            <li>Los Feliz Square</li>
-            <li>Los Feliz Village</li>
-            <li>Waverly Heights</li>
-        </ul>
-        <p>Los Feliz also includes:</p>
-        <ul>
-            <li>Laughlin Park (a gated enclave south of Los Feliz Boulevard)</li>
-            <li>Los Feliz Estates (north of Los Feliz Boulevard, directly under Griffith Park)</li>
-            <li>The Oaks</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Lynwood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Lynwood Gardens</li>
-            <li>Morton</li>
-        </ul>
-        <p class="region">Southeast</p>
-        <div class="alphabet-letter">M</div>
-
-        <h2><strong>Magnolia Square</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Malibu</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Carbon Beach (also known as Billionaire's Beach)</li>
-            <li>Malibu Country Estates</li>
-            <li>Malibu Colony</li>
-            <li>Point Dume</li>
-            <li>Zuma Beach</li>
-        </ul>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Manchester Square</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Manhattan Beach</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>El Porto</li>
-            <li>Gas Lamp District</li>
-            <li>Poet's Section</li>
-        </ul>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mar Vista</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Barnes City (Historic)</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Marina del Rey</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Alla (Historic)</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mayflower Village</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Maywood</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Melrose</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mid City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Arlington Heights (Arlington Heights Terrace and St. Elmo Village are within Arlington Heights)</li>
-            <li>Castle Heights</li>
-            <li>Country Club Park</li>
-            <li>Faircrest Heights</li>
-            <li>Lafayette Square</li>
-            <li>Larchmont</li>
-            <li>Mid-City Heights</li>
-            <li>Mid-City West</li>
-            <li>Olympic Park</li>
-            <li>Pico del Mar (developer-coined name)</li>
-            <li>Picfair Village</li>
-            <li>Pico Park (to the East of Picfair Village)</li>
-            <li>Redondo-Sycamore (historical tract name; no current city boundary)</li>
-            <li>St. Andrews Square (informal—often folded into Windsor Square)</li>
-            <li>Victoria Park</li>
-            <li>Vineyard (used casually around Vineyard Ave; no official boundary)</li>
-            <li>Wellington Square</li>
-            <li>Western Heights</li>
-            <li>Wilshire Park Historic Preservation Overlay Zone</li>
-            <li>Windsor Square (includes St. Andrews Square and Windsor Square Historic Preservation Overlay Zone)</li>
-            <li>Windsor Village Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mid-Wilshire / Miracle Mile</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Brookside</li>
-            <li>Cloverdale/Cochran</li>
-            <li>Little Ethiopia</li>
-            <li>Miracle Mile</li>
-            <li>Park La Brea</li>
-            <li>Park Mile</li>
-            <li>Oxford Square</li>
-            <li>Sycamore Square</li>
-            <li>Wilshire Highlands (realtor-coined)</li>
-            <li>Wilshire Vista</li>
-            <li>Wilshire Vista Heights</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mission Hills</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Monrovia</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Montebello</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Montecito Heights</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Hermon</li>
-            <li>Monterey Hills</li>
-        </ul>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Monterey Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Ramona (Historic)</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Morningside Circle</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mount Washington</strong></h2>
-        <p class="region">Northeast L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Mulholland Corridor</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Cornell</li>
-            <li>Malibou Lake</li>
-            <li>Malibu Bowl</li>
-            <li>Malibu Highlands</li>
-            <li>Monte Nido (Malibu Canyon)</li>
-            <li>Seminole Hot Springs</li>
-            <li>Sunset Mesa</li>
-            <li>Sycamore Canyon</li>
-            <li>Trifuno Canyon</li>
-            <li>Upper Las Virgenes Canyon</li>
-        </ul>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="alphabet-letter">N</div>
-
-        <h2><strong>North Hills</strong></h2>
-        <p><em>(Previously known as Sepulveda)</em></p>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>North Hollywood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>NoHo Arts District</li>
-            <li>Sherman Village (which split from Valley Village)</li>
-            <li>Toluca Terrace (Historic)</li>
-            <li>Valley Village</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Northridge</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Michael D. Antonovich Regional Park at Joughin Ranch</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Norwalk</strong></h2>
-        <p class="region">Southeast</p>
-        <div class="alphabet-letter">O</div>
-
-        <h2><strong>Pacific Palisades</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Alphabet Streets</li>
-            <li>Castellammare</li>
-            <li>Eames House (home-office of Ray and Charles Eames)</li>
-            <li>El Medio Bluffs</li>
-            <li>Getty Villa Museum</li>
-            <li>Inceville (Historic)</li>
-            <li>Murphy Ranch / Murphy Ranch Trail</li>
-            <li>Palisades Bluff Park</li>
-            <li>The Palisades Charter High School</li>
-            <li>Palisades-Highlands</li>
-            <li>Palisades Hills Recreation Center</li>
-            <li>Palisades Village - contemporary outdoor mall</li>
-            <li>Ridgeview Country Estates</li>
-            <li>The Riviera Country Club</li>
-            <li>Rustic Canyon</li>
-            <li>Self-Realization Fellowship Lake Shrine</li>
-            <li>Skull Rock Trailhead, Topanga State Park</li>
-            <li>Tahitian Terrace mobile home park</li>
-            <li>Temescal Canyon Park</li>
-            <li>Temescal Gateway Park</li>
-            <li>The Summit</li>
-            <li>Via Bluffs</li>
-            <li>Will Rogers State Beach</li>
-            <li>Will Rogers State Historic Park</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pacoima</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Palmdale</strong></h2>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Palms</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Palos Verdes Estates</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Malaga Cove</li>
-        </ul>
-        <p class="region">Palos Verdes Peninsula, South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Panorama City</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Paramount</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Clearwater</li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Park Mesa Heights</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pasadena</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Arroyo Terrace – Includes Park Place–Arroyo Terrace Historic District</li>
-            <li>Banbury Oaks</li>
-            <li>Brigden Ranch</li>
-            <li>Bungalow Heaven – Historic District</li>
-            <li>Chapman Woods</li>
-            <li>Civic Center District</li>
-            <li>Downtown Pasadena</li>
-            <li>East Pasadena</li>
-            <li>Garfield Heights – Landmark District</li>
-            <li>Historic Highlands</li>
-            <li>Lamanda Park</li>
-            <li>Linda Vista</li>
-            <li>Lower Arroyo Seco Historic District</li>
-            <li>Lower Hastings Ranch</li>
-            <li>Madison Heights</li>
-            <li>North Pasadena Heights</li>
-            <li>Normandie Heights</li>
-            <li>Oak Knoll</li>
-            <li>Old Pasadena</li>
-            <li>Orange Heights</li>
-            <li>Orange Heights-Barnhart Tracts Historic District</li>
-            <li>Playhouse Village (formerly Playhouse District)</li>
-            <li>Prospect Park – Listed on the National Register of Historic Places</li>
-            <li>San Rafael</li>
-            <li>Upper Hastings Ranch</li>
-            <li>Villa Parke</li>
-            <li>Washington Square</li>
-        </ul>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pearblossom</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Llano</li>
-            <li>Devil's Punchbowl Natural Area<br>
-            Just north of Acton in the Angeles National Forest — the dramatic sandstone formations and hiking trails of Devil's Punchbowl have a unique filming history.<br>
-            <span class="location">📍 28000 Devils Punchbowl Rd, Pearblossom, CA 93553</span></li>
-        </ul>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Persian Square (also known as "Tehrangeles," "Little Tehran," or "Little Persia")</strong></h2>
-        <p class="region">Iranian-American Area of Westwood Boulevard in Westwood, Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pico Rivera</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pico-Robertson</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pico-Union</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Alvarado Terrace Historic District</li>
-            <li>Byzantine-Latino Quarter (BLQ)<br>
-            In Los Angeles, the area historically known as Greek Town is now part of the Byzantine-Latino Quarter. This area, centered around Pico and Normandie, was once a thriving hub for Greek immigrants and businesses, particularly around St. Sophia Greek Orthodox Cathedral (<span class="location">📍 1324 Normandie Ave, Los Angeles, CA 90006</span>). While the Greek community has largely moved out, the area retains its Greek heritage and is now home to a diverse population, including Mexican and Central American families</li>
-            <li>El Salvador Community Corridor (Corredor salvadoreño)<br>
-            South of Koreatown, Along S Vermont Avenue, in the 90006 and 90007 Zip Codes:</li>
-        </ul>
-        <ul>
-            <li>Two Guys Plaza<br>
-            <span class="location">📍 1133 Vermont Ave, Los Angeles, CA 90006</span></li>
-            <li>San Salvador Restaurant<br>
-            <span class="location">📍 1828 Vermont Ave, Los Angeles, CA 90006</span></li>
-            <li>El Pulgarcito De America Restaurant<br>
-            <span class="location">📍 1608 W Washington Blvd, Los Angeles, CA 90007</span></li>
-            <li>El Migueleno Restaurant<br>
-            <span class="location">📍 2301 S Vermont Ave, Los Angeles, CA 90007</span></li>
-        </ul>
-        <ul>
-            <li>Pico-Union Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Playa del Rey</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Playa Vista</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Alsace (Historic Name)</li>
-        </ul>
-        <p>Between the bluffs of Westchester and Marina del Rey</p>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Pomona</strong></h2>
-        <p class="region">Pomona Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Porter Ranch</strong></h2>
-        <p class="region">San Fernando Valley</p>
-        <div class="alphabet-letter">Q</div>
-
-        <h2><strong>Quartz Hill</strong></h2>
-        <p class="region">Antelope Valley - Unincorporated</p>
-
-        <div class="alphabet-letter">R</div>
-
-        <h2><strong>Rancho Dominguez</strong></h2>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rancho Palos Verdes</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Portuguese Bend</li>
-        </ul>
-        <p class="region">Palos Verdes Peninsula, South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rancho Park</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Redondo Beach</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Reseda</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Ridge Route</strong></h2>
-        <p class="region">Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rolling Hills</strong></h2>
-        <p class="region">Palos Verdes Peninsula, South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rolling Hills Estates</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Academy Hill</li>
-            <li>Westfield</li>
-        </ul>
-        <p class="region">Palos Verdes Peninsula, South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rosemead</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Rowland Heights</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-        <div class="alphabet-letter">S</div>
-
-        <h2><strong>San Dimas</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>West San Dimas</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>San Fernando</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>San Gabriel</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>East San Gabriel</li>
-            <li>Northeast San Gabriel</li>
-            <li>South San Gabriel</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>San Marino</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>San Pasqual</strong></h2>
-        <p class="region">San Gabriel Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>San Pedro</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Federal Correctional Institution, Terminal Island</li>
-            <li>La Rambla - Unincorporated</li>
-            <li>Little Italy District and Little Italy Los Angeles Piazza, Downtown</li>
-            <li>Terminal Island</li>
-            <li>Terminal Island Japanese Fishing Village Memorial</li>
-            <li>Vinegar Hill Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Santa Clarita</strong></h2>
-        <p><strong>Incorporation Date:</strong> December 15, 1987</p>
-        <p><strong>How It Happened:</strong> Four distinct communities—Canyon Country, Newhall, Saugus, and Valencia—joined forces to incorporate as a single city. This move was driven by a desire for local control over development, services, and governance in the rapidly growing Santa Clarita Valley.</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li><strong>Canyon Country</strong></li>
-            <li><strong>Newhall</strong><br>
-            Newhall includes:</li>
-        </ul>
-        <ul>
-            <li>the Michael D. Antonovich Open Space. a 480-acre park that's part of the Santa Clarita Woodlands, & offers trails for hikers & bikers.<br>
-            <span class="location">📍 19152 Placerita Canyon Rd, Newhall, CA 91321</span></li>
-            <li>Placerita Canyon<br>
-            Inside Placerita Canyon is the historic "Oak of the Golden Dream" the site of California's original gold discovery in 1842.<br>
-            <span class="location">📍 19152 Placerita Canyon Rd, Newhall, CA 91321</span></li>
-        </ul>
-        <ul>
-            <li><strong>Saugus</strong><br>
-            The community of Saugus was initially named Newhall by Henry Mayo Newhall. In 1879, after shifting the town's borders a few miles south, he renamed it Saugus after his birthplace in Saugus, Massachusetts. Many of the early residents migrated from Texas and Oklahoma to work in the oil fields. But the rural landscape also attracted those seeking space away from the city.<br><br>
-            Home to the Original Saugus Café, established in 1886— the oldest continuously operating restaurant in LA County<br>
-            <span class="location">📍 25861 Railroad Ave, Santa Clarita, CA 91355</span></li>
-            <li><strong>Stevenson Ranch</strong><br>
-            Stevenson Ranch is an unincorporated community in the Santa Clarita Valley of Los Angeles County, California. Stevenson Ranch includes Mentryville Park, the remains of the historic oil-mining town of Mentryville, founded in 1875. Stevenson Ranch is also the filming location of several film and television productions, including the television show "Weeds," a Showtime original series, as well as the feature film "Pleasantville." Its master-planned nature is at the heart of the suburban commentary of "Weeds," such as the "Little Boxes" song and sprawling development portrayed in the opening of the show.</li>
-            <li><strong>Valencia</strong><br>
-            which includes CalArts, <span class="location">📍 24700 McBean Pkwy, Valencia, CA 91355</span></li>
-            <li><strong>Val Verde</strong></li>
-        </ul>
-        <p class="region">Santa Clarita Valley, Northwestern Los Angeles County</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Santa Fe Springs</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Santa Monica</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Midtown (also known as Mid-City Santa Monica)</li>
-            <li>North of Montana</li>
-            <li>North of San Vicente</li>
-            <li>Ocean Park</li>
-            <li>Santa Monica Canyon</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sawtelle Japantown (formerly known as "Little Osaka")</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Shadow Hills</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Hansen Heights (Historic)</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sherman Oaks</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Bliss Park (Historic)</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sierra Madre</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Signal Hill</strong></h2>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Silver Lake</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Edendale (Historic)</li>
-            <li>Ivanhoe (Historic)</li>
-            <li>Moreno Highlands</li>
-            <li>Red Hill (Historic)</li>
-            <li>Sunset Junction</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>South Gate</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Hollydale</li>
-            <li>Tweedy Mile (Tweedy Blvd South Gate, CA 90280)</li>
-            <li>Workman</li>
-        </ul>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>South Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>52nd Place Tifal Brothers Tract Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>South Pasadena</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>South Robertson</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Studio City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Cahuenga Pass</li>
-            <li>Footbridge Square</li>
-            <li>Silver Triangle</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sun Valley</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>La Tuna Canyon Park Stonehurst Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sun Village</strong></h2>
-        <p class="region">Antelope Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sunland</strong></h2>
-        <p class="region">Verdugos</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Sylmar</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="alphabet-letter">T</div>
-
-        <h2><strong>Tarzana</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Temple City</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Thai Town (ไทยทาวน์)</strong></h2>
-        <p class="region">East Hollywood, Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Toluca Lake</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Topanga (also known as Topanga Canyon)</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Fernwood</li>
-            <li>Glenview</li>
-            <li>Sylvia Park</li>
-            <li>Topanga State Park</li>
-        </ul>
-        <p class="region">Topanga Canyon, Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Torrance</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Tujunga</strong></h2>
-        <p class="region">Verdugos</p>
-        <div class="alphabet-letter">U</div>
-
-        <h2><strong>Universal City</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Universal Studios CityWalk</li>
-            <li>Universal Studios Hollywood</li>
-        </ul>
-        <p class="region">San Fernando Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>University Park</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Menlo Avenue–West Twenty-Ninth Street Historic District</li>
-            <li>North University Park Historic District</li>
-            <li>South Figueroa Corridor</li>
-            <li>St. James Park Historic District</li>
-            <li>University Park Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="alphabet-letter">V</div>
-
-        <h2><strong>Valley Glen</strong></h2>
-        <p>Valley Glen is a neighborhood in the southeastern section of the San Fernando Valley in Los Angeles, California. It was originally part of Van Nuys and North Hollywood but became its own officially recognized neighborhood in 1998. It spans about 4.8 square miles and is bordered by Sherman Way to the north, Burbank Boulevard to the south, Hazeltine Avenue to the west, and the Hollywood Freeway to the east.</p>
-        
-        <p>Including:</p>
-        <ul>
-            <li>Los Angeles Valley College<br>
-            <span class="location">📍 5800 Fulton Ave, Valley Glen, CA 91401</span></li>
-            <li>Great Wall of Los Angeles mural<br>
-            2,754-foot-long mural depicting the history of California, with a focus on women & minorities. 12-foot high by 2,754-foot (½ mile) acrylic community mural, consisting of individually-designed sections depicting California and local historical and social issue. This extensive mural effort was coordinated by Judith Baca, U.C.L.A. professor of Chicano Studies, co-founder of Social and Public Art Resource Center (SPARC), and National Medal of Arts recipient (2023).<br>
-            <span class="location">📍 12900 Oxnard St, Valley Glen, CA 91606</span></li>
-            <li>Former site of the Victory Drive-In<br>
-            13037 Victory Boulevard is a former address in North Hollywood, California, which was once the site of the Victory Drive-In. The Victory Drive-In was a popular drive-in movie theater with room for a massive amount of cars: 650 vehicles, to be exact. Opened on May 25, 1949, and closed in 1977, a shopping center is now located at the address.<br>
-            <span class="location">📍 13037 Victory Blvd, Valley Glen, CA 91606</span></li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Valyermo</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Saint Andrew's Abbey<br>
-            Benedictine monastery and Retreat Center<br>
-            <span class="location">📍 31001 N Valyermo Rd, Valyermo, CA 93563</span></li>
-        </ul>
-        <p>A very quiet desert community of only a few hundred. The U.S. Census data for ZIP code 93563 reports a population of 143. Population: 450</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Van Nuys</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Van Nuys Historic Preservation Overlay Zone</li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Venice</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Dogtown (Historic)</li>
-            <li>Oakwood</li>
-            <li>Venice Canal Historic District</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Vermont Knolls</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Empowerment Congress Southwest</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Vermont Square</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Vermont Vista</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Vermont-Slauson</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Vernon</strong></h2>
-        <p class="region">Southeast</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>View Park-Windsor Hills</strong></h2>
-        <p class="region">South L.A.</p>
-        <div class="alphabet-letter">W</div>
-
-        <h2><strong>Walnut</strong></h2>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Walnut Park</strong></h2>
-        <p class="region">Southeast - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Warner Center</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Watts</strong></h2>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>West Adams</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Van Buren Place Historic District including the Furlong House, designated as Los Angeles Historic-Cultural Monument #678<br>
-            <span class="location">📍 2657 Van Buren Pl, Los Angeles, CA 90007</span></li>
-            <li>West Adams Heights</li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westchester</strong></h2>
-        <p class="region">South Bay</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westdale</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>West Hills</strong></h2>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>West Hollywood (also known as WeHo)</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Boystown / Rainbow District</li>
-            <li>Little Russia</li>
-            <li>Norma Triangle</li>
-            <li>North Harper Avenue Historic District</li>
-            <li>The Stahl House (Case Study House #22)<br>
-            <span class="location">📍 1635 Woods Drive, West Hollywood, CA 90069</span></li>
-            <li>The Sunset Strip</li>
-            <li>Tri-West</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>West Los Angeles</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westlake (also known as MacArthur Park)</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Belmont Square (Historic)</li>
-            <li>Crown Hill (Historic)</li>
-            <li>City West (bordering/contested with Downtown)</li>
-            <li>Lafayette Park</li>
-            <li>"Little Central America" (overlaps with Pico-Union and Pico-Union's El Salvador Community Corridor)</li>
-            <li>MacArthur Park Lake</li>
-            <li>Rampart Village</li>
-        </ul>
-        <p class="region">Central L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westlake Village</strong></h2>
-        <p class="region">Santa Monica Mountains</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westmont</strong></h2>
-        <p class="region">South L.A. - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westside Village</strong></h2>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Westwood</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Comstock Hills</li>
-            <li>Holmby Westwood</li>
-            <li>Little Holmby</li>
-            <li>Westwood Hills</li>
-            <li>Westwood Village Business District (bordered by Gayley Avenue, LeConte Avenue, Hilgard Avenue and Wilshire Boulevard)</li>
-            <li>Wilshire Corridor (aka "Millionaire's Mile")<br>
-            While technically part of Westwood, this is a unique sub-area along Wilshire Blvd between Westwood Blvd and Beverly Glen. Known for luxury high-rise condos.</li>
-        </ul>
-        <p class="region">Westside</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>White Fence Farms</strong></h2>
-        <p class="region">Palmdale, Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Whittier</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>South Whittier</li>
-            <li>West Whittier</li>
-            <li>West Whittier Village</li>
-            <li>West Whittier - Los Nietos</li>
-            <li>Whittier Narrows</li>
-        </ul>
-        <p class="region">San Gabriel Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Willowbrook</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Magic Johnson Park<br>
-            905 E El Segundo Blvd, Los Angeles, CA 90059</li>
-            <li>George Washington Carver Park<br>
-            <span class="location">📍 1400 E 118th St, Los Angeles, CA 90059</span></li>
-            <li>Martin Luther King, Jr. Outpatient Center<br>
-            <span class="location">📍 1670 E 120th St, Los Angeles, CA 90059</span></li>
-        </ul>
-        <p class="region">South L.A.</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Wilmington</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Banning Park Historic Preservation Overlay Zone</li>
-            <li>Los Angeles Harbor College<br>
-            A notable educational institution within the area.<br>
-            <span class="location">📍 1111 Figueroa Pl, Wilmington, CA 90744</span></li>
-            <li>Drum Barracks Civil War Museum<br>
-            A historic military site from the Civil War era.<br>
-            <span class="location">📍 1052 N Banning Blvd, Wilmington, CA 90744</span></li>
-            <li>Watson Junction</li>
-        </ul>
-        <p class="region">Harbor</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Wilsona Gardens</strong></h2>
-        <p class="region">Lancaster, Antelope Valley - Unincorporated</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Winnetka</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Winnetka Bowl<br>
-            <span class="location">📍 20122 Vanowen St. Winnetka, CA 91306</span></li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="divider"></div>
-
-        <h2><strong>Woodland Hills</strong></h2>
-        <p>Including:</p>
-        <ul>
-            <li>Struckus House<br>
-            A striking, cylindrical home in modernist/organic style designed by architect Bruce Goff<br>
-            <span class="location">📍 4510 Saltillo St. Woodland Hills, CA 91364</span></li>
-        </ul>
-        <p class="region">San Fernando Valley</p>
-
-        <div class="alphabet-letter">X</div>
-        <p><em>No entries found for X</em></p>
-
-        <div class="alphabet-letter">Y</div>
-        <p><em>No entries found for Y</em></p>
-
-        <div class="alphabet-letter">Z</div>
-        <p><em>No entries found for Z</em></p>
-
-        <div class="divider"></div>
-    
-        <div class="intro">
-            <h2>Last Updated:</h2>
-            <p><em>Thursday Oct 2 2025 | By Nate Schulman</em></p>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="site-header">
+            <h1>Addressing LA</h1>
+            <h2>An A to Z of Cities and Communities<br>in Los Angeles County</h2>
+            <p class="subtitle"><em>By Nate Schulman</em></p>
+        </header>
+
+        <!-- Introduction -->
+        <section class="intro">
+            <h2>About This Guide</h2>
+            <p>The goal of this website is to identify and alphabetize all cities, communities, neighborhoods, and
+                unincorporated areas within Los Angeles County, both past and present.</p>
+            <p>This comprehensive A to Z guide of Los Angeles County communities represents an ongoing effort to
+                document the rich diversity of neighborhoods, cities, and unincorporated areas that make up one of the
+                nation's most populous counties.</p>
+            <div class="intro-stats">
+                <div class="stat">
+                    <span class="stat-number">4,084</span>
+                    <span class="stat-label">Square Miles</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">10M+</span>
+                    <span class="stat-label">Population</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">88</span>
+                    <span class="stat-label">Cities</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alphabet Navigation -->
+        <nav class="alphabet-nav" id="alphabetNav">
+            <a href="#a-section">A</a>
+            <a href="#b-section">B</a>
+            <a href="#c-section">C</a>
+            <a href="#d-section">D</a>
+            <a href="#e-section">E</a>
+            <a href="#f-section">F</a>
+            <a href="#g-section">G</a>
+            <a href="#h-section">H</a>
+            <a href="#i-section">I</a>
+            <a href="#j-section">J</a>
+            <a href="#k-section">K</a>
+            <a href="#l-section">L</a>
+            <a href="#m-section">M</a>
+            <a href="#n-section">N</a>
+            <a href="#o-section">O</a>
+            <a href="#p-section">P</a>
+            <a href="#q-section">Q</a>
+            <a href="#r-section">R</a>
+            <a href="#s-section">S</a>
+            <a href="#t-section">T</a>
+            <a href="#u-section">U</a>
+            <a href="#v-section">V</a>
+            <a href="#w-section">W</a>
+            <a href="#x-section">X</a>
+            <a href="#y-section">Y</a>
+            <a href="#z-section">Z</a>
+        </nav>
+
+        <!-- Search Box -->
+        <div class="search-container">
+            <input type="text" id="neighborhoodSearch" placeholder="🔍 Search neighborhoods, regions, or features..."
+                aria-label="Search neighborhoods">
+            <button id="clearSearch" class="clear-btn">✕</button>
         </div>
-</div></body></html>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Content will be populated by app.js -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+            <div class="footer-content">
+                <p>&copy; 2025 Addressing LA. All rights reserved.</p>
+                <p>Created by <a href="#">Nate Schulman</a></p>
+                <p class="footer-note">Dedicated to the diverse communities of Los Angeles County</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Back to Top functionality
+        const backToTopBtn = document.getElementById('backToTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+</body>
+
+</html>
