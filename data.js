@@ -105,6 +105,13 @@ const neighborhoodData = [
     "subAreas": "<p><strong>Including:</strong></p>\n                        <ul>\n                            <li>\n                                <p>Arleta Ave corridor<br>\n                                    Ethnic shops and restaurants lining<br>\n                                    <a href=\"https://www.google.com/maps/search/?api=1&query=Arleta%20Ave.%2C%20Arleta%2C%20CA%2091331\" target=\"_blank\" class=\"location\">\ud83d\udccd Arleta Ave., Arleta, CA 91331</a>\n                                </p>\n                            </li>\n                            <li>\n                                <p>Arleta High School<br>\n                                    <a href=\"https://www.google.com/maps/search/?api=1&query=14200%20Van%20Nuys%20Blvd%2C%20Arleta%2C%20CA%2091331\" target=\"_blank\" class=\"location\">\ud83d\udccd 14200 Van Nuys Blvd, Arleta, CA 91331</a>\n                                </p>\n                            </li>\n                            <li>\n                                <p>Juicy Couture's Former Headquarters<br>\n                                    Developed in the late 1990s, these unassuming industrial buildings housed the iconic\n                                    fashion brand Juicy Couture's early operations, marking a chapter in LA's\n                                    garment-district suburban decentralization and late-20th-century cultural\n                                    export.<br>\n                                    <a href=\"https://www.google.com/maps/search/?api=1&query=12723%20Wentworth%20St%2C%20Arleta%2C%20CA%2091331\" target=\"_blank\" class=\"location\">\ud83d\udccd 12723 Wentworth St, Arleta, CA 91331</a>\n                                </p>\n                            </li>\n                        </ul>"
   },
   {
+    "id": "arlington-heights",
+    "name": "Arlington Heights",
+    "region": "Central L.A.",
+    "description": "",
+    "subAreas": "<p><strong>Including:</strong></p>\n                        <ul>\n                            <li>\n                                <p>Arlington Heights Terrace</p>\n                            </li>\n                            <li>\n                                <p>St. Elmo Village</p>\n                            </li>\n                        </ul>"
+  },
+  {
     "id": "artesia",
     "name": "Artesia",
     "region": "Southeast",
@@ -159,6 +166,13 @@ const neighborhoodData = [
     "region": "San Gabriel Valley",
     "description": "<!-- The pattern continues for all remaining entries... -->\n                        <!-- I've demonstrated the structure and formatting approach for the first section -->\n                        <!-- The complete file would continue with all entries from B through Z following the same pattern -->",
     "subAreas": "<p><strong>Including:</strong></p>\n    <ul>\n        <li>\n            <p>Original In-N-Out Burger Museum<br>\n                <a href=\"https://www.google.com/maps/search/?api=1&query=13766%20Francisquito%20Ave%2C%20Baldwin%20Park%2C%20CA%2091706\" target=\"_blank\" class=\"location\">\ud83d\udccd 13766 Francisquito Ave, Baldwin Park, CA 91706</a><br>\n                Replica of the first In-N-Out store. In honor of the chain's 1948 founding in a tiny 100 ft\u00b2 drive-thru\n                in Baldwin Park, a faithful replica of the original stand opened in March 2014 near its former location,\n                which was demolished to make way for Interstate 10. Celebrates Harry and Esther Snyder's invention of\n                California's first drive-thru hamburger stand and the two-way speaker box that accelerated car-side\n                service. Operates as both shrine and mini-museum, staffed by In-N-Out ambassadors who share company lore\n                and display period props and d\u00e9cor\n            </p>\n        </li>\n    </ul>"
+  },
+  {
+    "id": "beverly-hills",
+    "name": "Beverly Hills",
+    "region": "Westside",
+    "description": "",
+    "subAreas": ""
   },
   {
     "id": "boyle-heights",
